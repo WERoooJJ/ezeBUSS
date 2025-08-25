@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ezeBUSS — Выбор даты и класса</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<header class="site-header">
+<div class="brand">eze<span>BUSS</span></div>
+<a class="link" href="index.html">← изменить маршрут</a>
+</header>
+<main class="container">
+<section class="card">
+<h2 id="route">Маршрут</h2>
+<p class="muted">Выберите дату (28 августа — 3 сентября) и класс обслуживания.</p>
+
+
+<div id="dateList" class="date-list"></div>
+
+
+<div class="grid grid-2 mt">
+<label class="radio">
+<input type="radio" name="cls" value="Эконом" checked>
+<span>Эконом <small id="ecoPrice">—</small></span>
+</label>
+<label class="radio">
+<input type="radio" name="cls" value="Бизнес">
+<span>Бизнес <small id="bizPrice">—</small></span>
+</label>
+</div>
+
+
+<button id="payBtn" class="btn primary mt">Оплатить</button>
+</section>
+</main>
+
+
+<script>
+const from = sessionStorage.getItem('ez_from');
+const to = sessionStorage.getItem('ez_to');
+if (!from || !to) location.href = 'index.html';
+
+
+document.getElementById('route').textContent = `${from} → ${to}`;
+
+
+// Даты: 28 августа — 3 сентября (фикс)
+const DATES = [
+{d:'2025-08-28', label:'28 августа'},
+{d:'2025-08-29', label:'29 августа'},
+{d:'2025-08-30', label:'30 августа'},
+{d:'2025-08-31', label:'31 августа'},
+{d:'2025-09-01', label:'1 сентября'},
+{d:'2025-09-02', label:'2 сентября'},
+{d:'2025-09-03', label:'3 сентября'},
+];
+
+
+const list = document.getElementById('dateList');
+DATES.forEach((it, idx)=>{
+const btn = document.createElement('button');
+btn.className = 'date-btn';
+btn.textContent = it.label;
+btn.dataset.date = it.d;
+if (idx===0) btn.classList.add('active');
+btn.addEventListener('click', ()=>{
+document.querySelectorAll('.date-btn').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+updatePrices();
+});
+list.appendChild(btn);
+});
+
+
+function seed(str){ let h=0; for(let i=0;i<str.length;i++) h=((h<<5)-h)+str.charCodeAt(i); return Math.abs(h); }
+function priceInRange(seedv, min, max){ const r=(seedv%1000)/1000; return Math.round(min + r*(max-min)); }
+function getActiveDate(){ const a=document.querySelector('.date-btn.active'); return a?{d:a.dataset.date,label:a.textContent}:DATES[0]; }
+function updatePrices(){
+const date = getActiveDate();
+const s = seed(`${from}->${to}@${date.d}`);
+const eco = priceInRange(s, 4300, 5440); // Эконом 4300–5440
+const biz = priceInRange(s*7, 12050, 20900); // Бизнес 12050–20900
+document.getElementById('ecoPrice').textContent = `${eco.toLocaleString('ru-RU')} ₽`;
+</html>
