@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ezeBUSS — Поиск автобусов</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<header class="site-header">
+<div class="brand">eze<span>BUSS</span></div>
+</header>
+<main class="container">
+<section class="card">
+<h1>Покупка поездок на автобусе</h1>
+<p class="muted">Выберите маршрут и найдите рейсы.</p>
+
+
+<div class="grid grid-2">
+<div>
+<label>Откуда</label>
+<select id="fromCity"></select>
+</div>
+<div>
+<label>Куда</label>
+<select id="toCity"></select>
+</div>
+</div>
+
+
+<button id="findBtn" class="btn primary">Найти автобусы</button>
+</section>
+</main>
+
+
+<div id="overlay" class="overlay hidden">
+<div class="loader"></div>
+<div class="overlay-text">Идёт поиск рейсов…</div>
+</div>
+
+
+<script>
+const CITIES = [
+'Москва','Санкт‑Петербург','Казань','Нижний Новгород','Самара',
+'Екатеринбург','Новосибирск','Краснодар','Ростов‑на‑Дону','Уфа',
+'Пермь','Челябинск','Воронеж','Волгоград','Сочи'
+];
+const fromSel = document.getElementById('fromCity');
+const toSel = document.getElementById('toCity');
+CITIES.forEach(c=>{
+const o1=document.createElement('option'); o1.value=o1.textContent=c; fromSel.appendChild(o1);
+const o2=document.createElement('option'); o2.value=o2.textContent=c; toSel.appendChild(o2);
+});
+fromSel.value = 'Москва';
+toSel.value = 'Санкт‑Петербург';
+
+
+document.getElementById('findBtn').addEventListener('click', () => {
+const from = fromSel.value, to = toSel.value;
+if (from === to) { alert('Город отправления и назначения должны отличаться.'); return; }
+sessionStorage.setItem('ez_from', from);
+sessionStorage.setItem('ez_to', to);
+
+
+const overlay = document.getElementById('overlay');
+overlay.classList.remove('hidden');
+// 2 
+setTimeout(()=>{ location.href = 'book.html'; }, 2000);
+});
+</script>
+</body>
+</html>
