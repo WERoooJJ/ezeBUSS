@@ -1,86 +1,98 @@
 <!doctype html>
 <html lang="ru">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>ezeBUSS — Выбор даты и класса</title>
-<link rel="stylesheet" href="styles.css" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ezeBUSS — Выбор даты</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body{ margin:0; font-family:'Segoe UI',Roboto,sans-serif; background:linear-gradient(135deg,#0f2027,#203a43,#2c5364); color:#f1f5f9 }
+    header{ padding:16px 20px; background:rgba(0,0,0,.35); backdrop-filter:blur(10px); position:sticky; top:0; z-index:5; animation:fadeDown 1s ease }
+    .wrap{ max-width:960px; margin:24px auto; padding:0 16px }
+    .card{ background:rgba(15,23,42,.9); border:1px solid #1f2a3a; border-radius:24px; padding:22px; box-shadow:0 20px 50px #0008; animation:fadeUp .8s ease }
+    h2{ margin:0 0 6px }
+    .muted{ color:#cbd5e1b3 }
+    .date-strip{ display:flex; gap:10px; overflow:auto; padding:6px; margin:10px -6px 0 }
+    .chip{ flex:0 0 auto; padding:10px 14px; border-radius:999px; border:1px solid #223047; background:#0b1220; color:#e2e8f0; cursor:pointer; transition:.25s box-shadow,.25s transform }
+    .chip:hover{ box-shadow:0 0 0 3px #60a5fa33 }
+    .chip.active{ background:linear-gradient(180deg,#0b1220,#0b1220) padding-box,linear-gradient(120deg,#60a5fa,#34d399) border-box; border:1px solid transparent; transform:translateY(-1px) }
+    .prices{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-top:14px }
+    .price-card{ border:1px solid #223047; border-radius:16px; padding:14px; background:#0b1220; cursor:pointer; transition:.2s }
+    .price-card:hover{ box-shadow:0 10px 30px #0007 }
+    .price-card input{ margin-right:8px }
+    .cta{ width:100%; margin-top:16px }
+    @media (max-width:640px){ .prices{ grid-template-columns:1fr } }
+  </style>
 </head>
 <body>
-<header class="site-header">
-<div class="brand">eze<span>BUSS</span></div>
-<a class="link" href="index.html">← изменить маршрут</a>
-</header>
-<main class="container">
-<section class="card">
-<h2 id="route">Маршрут</h2>
-<p class="muted">Выберите дату (28 августа — 3 сентября) и класс обслуживания.</p>
+  <header><strong>eze<span style="color:#60a5fa">BUSS</span></strong> · выбор даты</header>
+  <main class="wrap">
+    <section class="card">
+      <h2 id="route">Маршрут</h2>
+      <p class="muted">Выберите дату (28 августа — 3 сентября) и класс обслуживания.</p>
 
+      <div id="dateStrip" class="date-strip"></div>
 
-<div id="dateList" class="date-list"></div>
+      <div class="prices">
+        <label class="price-card"><input type="radio" name="cls" value="Эконом" checked><strong>Эконом</strong> — <span id="ecoPrice">—</span></label>
+        <label class="price-card"><input type="radio" name="cls" value="Бизнес"><strong>Бизнес</strong> — <span id="bizPrice">—</span></label>
+      </div>
 
+      <button id="payBtn" class="btn primary cta">Оплатить</button>
+    </section>
+  </main>
 
-<div class="grid grid-2 mt">
-<label class="radio">
-<input type="radio" name="cls" value="Эконом" checked>
-<span>Эконом <small id="ecoPrice">—</small></span>
-</label>
-<label class="radio">
-<input type="radio" name="cls" value="Бизнес">
-<span>Бизнес <small id="bizPrice">—</small></span>
-</label>
-</div>
+  <script>
+    const from=sessionStorage.getItem('ez_from');
+    const to=sessionStorage.getItem('ez_to');
+    if(!from||!to) location.href='index.html';
+    document.getElementById('route').textContent=`${from} → ${to}`;
 
+    const DATES=[
+      {d:'2025-08-28',label:'28 августа'},
+      {d:'2025-08-29',label:'29 августа'},
+      {d:'2025-08-30',label:'30 августа'},
+      {d:'2025-08-31',label:'31 августа'},
+      {d:'2025-09-01',label:'1 сентября'},
+      {d:'2025-09-02',label:'2 сентября'},
+      {d:'2025-09-03',label:'3 сентября'},
+    ];
+    const strip=document.getElementById('dateStrip');
+    DATES.forEach((it,idx)=>{
+      const btn=document.createElement('button');
+      btn.className='chip'+(idx===0?' active':'');
+      btn.textContent=it.label; btn.dataset.date=it.d;
+      btn.addEventListener('click',()=>{
+        document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+        btn.classList.add('active'); updatePrices();
+      });
+      strip.appendChild(btn);
+    });
 
-<button id="payBtn" class="btn primary mt">Оплатить</button>
-</section>
-</main>
+    function seed(str){ let h=0; for(let i=0;i<str.length;i++) h=((h<<5)-h)+str.charCodeAt(i); return Math.abs(h); }
+    function priceInRange(seedv,min,max){ const r=(seedv%1000)/1000; return Math.round(min + r*(max-min)); }
+    function activeDate(){ const a=document.querySelector('.chip.active'); return a?{d:a.dataset.date,label:a.textContent}:DATES[0]; }
 
+    function updatePrices(){
+      const dt=activeDate();
+      const s=seed(`${from}->${to}@${dt.d}`);
+      const eco=priceInRange(s,4300,5440);
+      const biz=priceInRange(s*7,12050,20900);
+      document.getElementById('ecoPrice').textContent=`${eco.toLocaleString('ru-RU')} ₽`;
+      document.getElementById('bizPrice').textContent=`${biz.toLocaleString('ru-RU')} ₽`;
+    }
+    updatePrices();
 
-<script>
-const from = sessionStorage.getItem('ez_from');
-const to = sessionStorage.getItem('ez_to');
-if (!from || !to) location.href = 'index.html';
-
-
-document.getElementById('route').textContent = `${from} → ${to}`;
-
-
-// Даты: 28 августа — 3 сентября (фикс)
-const DATES = [
-{d:'2025-08-28', label:'28 августа'},
-{d:'2025-08-29', label:'29 августа'},
-{d:'2025-08-30', label:'30 августа'},
-{d:'2025-08-31', label:'31 августа'},
-{d:'2025-09-01', label:'1 сентября'},
-{d:'2025-09-02', label:'2 сентября'},
-{d:'2025-09-03', label:'3 сентября'},
-];
-
-
-const list = document.getElementById('dateList');
-DATES.forEach((it, idx)=>{
-const btn = document.createElement('button');
-btn.className = 'date-btn';
-btn.textContent = it.label;
-btn.dataset.date = it.d;
-if (idx===0) btn.classList.add('active');
-btn.addEventListener('click', ()=>{
-document.querySelectorAll('.date-btn').forEach(b=>b.classList.remove('active'));
-btn.classList.add('active');
-updatePrices();
-});
-list.appendChild(btn);
-});
-
-
-function seed(str){ let h=0; for(let i=0;i<str.length;i++) h=((h<<5)-h)+str.charCodeAt(i); return Math.abs(h); }
-function priceInRange(seedv, min, max){ const r=(seedv%1000)/1000; return Math.round(min + r*(max-min)); }
-function getActiveDate(){ const a=document.querySelector('.date-btn.active'); return a?{d:a.dataset.date,label:a.textContent}:DATES[0]; }
-function updatePrices(){
-const date = getActiveDate();
-const s = seed(`${from}->${to}@${date.d}`);
-const eco = priceInRange(s, 4300, 5440); // Эконом 4300–5440
-const biz = priceInRange(s*7, 12050, 20900); // Бизнес 12050–20900
-document.getElementById('ecoPrice').textContent = `${eco.toLocaleString('ru-RU')} ₽`;
+    document.getElementById('payBtn').addEventListener('click',()=>{
+      const dt=activeDate();
+      const cls=document.querySelector('input[name="cls"]:checked').value;
+      const price=(cls==='Эконом')?document.getElementById('ecoPrice').textContent:document.getElementById('bizPrice').textContent;
+      sessionStorage.setItem('ez_date',dt.label);
+      sessionStorage.setItem('ez_date_iso',dt.d);
+      sessionStorage.setItem('ez_cls',cls);
+      sessionStorage.setItem('ez_price',price);
+      location.href='pay.html';
+    });
+  </script>
+</body>
 </html>
