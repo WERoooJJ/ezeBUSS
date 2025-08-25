@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ezeBUSS — Оплата</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<header class="site-header">
+<div class="brand">eze<span>BUSS</span></div>
+<a class="link" href="book.html">← назад</a>
+</header>
+<main class="container">
+<section class="card">
+<h2>Оплата картой</h2>
+<p id="summary" class="muted"></p>
+
+
+<form id="cardForm" class="grid grid-2">
+<div class="col-2"><label>Номер карты</label>
+<input required maxlength="19" placeholder="0000 0000 0000 0000" oninput="this.value=this.value.replace(/\D/g,'').replace(/(.{4})/g,'$1 ').trim()">
+</div>
+<div><label>MM/YY</label>
+<input required maxlength="5" placeholder="12/29" oninput="this.value=this.value.replace(/[^\d/]/g,'').slice(0,5)">
+</div>
+<div><label>CVV</label>
+<input required maxlength="3" placeholder="123" oninput="this.value=this.value.replace(/\D/g,'').slice(0,3)">
+</div>
+<div class="col-2"><label>Имя держателя</label>
+<input required placeholder="IVAN IVANOV">
+</div>
+
+
+<div class="col-2">
+<button class="btn primary" type="submit">Оплатить</button>
+</div>
+</form>
+
+
+<div id="paying" class="hidden center mt">
+<div class="long-loader"></div>
+<p>Выполняется оплата… (около 20 секунд)</p>
+</div>
+
+
+<div id="fail" class="hidden alert">Неверные данные карты. Попробуйте снова.</div>
+
+
+<div id="ticket" class="hidden ticket"></div>
+</section>
+</main>
+
+
+<script>
+const from = sessionStorage.getItem('ez_from');
+const to = sessionStorage.getItem('ez_to');
+const dateLabel = sessionStorage.getItem('ez_date');
+const cls = sessionStorage.getItem('ez_cls');
+const price = sessionStorage.getItem('ez_price');
+if (!from || !to || !dateLabel || !cls || !price) location.href = 'index.html';
+
+
+document.getElementById('summary').textContent = `${from} → ${to} · ${dateLabel} · ${cls} · ${price}`;
+
+
+function code(n){ const abc='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let out=''; for(let i=0;i<n;i++) out+=abc[Math.floor(Math.random()*abc.length)]; return out; }
+
+
+const form = document.getElementById('cardForm');
+const paying = document.getElementById('paying');
+const fail = document.getElementById('fail');
+const ticket = document.getElementById('ticket');
+
+
+form.addEventListener('submit', async (e)=>{
+e.preventDefault(); fail.classList.add('hidden'); ticket.classList.add('hidden');
+form.classList.add('hidden'); paying.classList.remove('hidden');
+
+
+// 20
+await new Promise(r=>setTimeout(r, 20000));
+
+
+// json
+try{
+const res = await fetch(`payment_status.json?ts=${Date.now()}`);
+</html>
